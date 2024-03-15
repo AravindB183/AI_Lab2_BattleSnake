@@ -22,10 +22,10 @@ def info() -> typing.Dict:
 
     return {
         "apiversion": "1",
-        "author": "Slytherin Seeker",  # TODO: Your Battlesnake Username
-        "color": "#736CCB",  # TODO: Choose color
-        "head": "fang",  # TODO: Choose head
-        "tail": "pixel",  # TODO: Choose tail
+        "author": "",  # TODO: Your Battlesnake Username
+        "color": "#3E338F",  # TODO: Choose color
+        "head": "default",  # TODO: Choose head
+        "tail": "default",  # TODO: Choose tail
     }
 
 
@@ -37,6 +37,10 @@ def start(game_state: typing.Dict):
 # end is called when your Battlesnake finishes a game
 def end(game_state: typing.Dict):
     print("GAME OVER\n")
+
+
+def distance_to_food(my_head, food):
+    return ((my_head["x"] - food["x"])**2 + (my_head["y"] - food["y"])**2)**0.5
 
 
 # move is called on every turn and returns your next move
@@ -62,49 +66,66 @@ def move(game_state: typing.Dict) -> typing.Dict:
     elif my_neck["y"] > my_head["y"]:  # Neck is above head, don't move up
         is_move_safe["up"] = False
 
-    # board_height = game_state['board']['height']
     # TODO: Step 1 - Prevent your Battlesnake from moving out of bounds
     board_width = game_state['board']['width']
     board_height = game_state['board']['height']
-
-    if my_head['x'] == board_width - 1:
+    if my_head["x"] == board_width-1:
         is_move_safe["right"] = False
-    if my_head['x'] == 0:
+    if my_head["x"] == 0:
         is_move_safe["left"] = False
-    if my_head['y'] == 0:
-        is_move_safe["down"] = False
-    if my_head['y'] == board_height - 1:
+    if my_head["y"] == board_height-1:
         is_move_safe["up"] = False
-
+    if my_head["y"] == 0:
+        is_move_safe["down"] = False
 
     # TODO: Step 2 - Prevent your Battlesnake from colliding with itself
-    # my_body = game_state['you']['body']
     my_body = game_state['you']['body']
-    for segment in my_body[1:]:  # Check collision with all body segments except head
-        if my_head['x'] == segment['x'] and my_head['y'] == segment['y']:
-            is_move_safe["up"] = False
-            is_move_safe["down"] = False
-            is_move_safe["left"] = False
+    for segment in my_body[1:]:
+        if segment["x"] == my_head["x"] + 1 and segment["y"] == my_head["y"]:
             is_move_safe["right"] = False
-            break
-    # TODO: Step 2 - Prevent your Battlesnake from colliding with itself
-    '''my_body = game_state['you']['body']
-
-    for segment in my_body[1:]:  # Exclude the head
-        if next_move == "up" and my_head["x"] == segment["x"] and my_head["y"] == segment["y"] + 1:
-            is_move_safe["up"] = False
-        elif next_move == "down" and my_head["x"] == segment["x"] and my_head["y"] == segment["y"] - 1:
-            is_move_safe["down"] = False
-        elif next_move == "left" and my_head["x"] == segment["x"] + 1 and my_head["y"] == segment["y"]:
+        elif segment["x"] == my_head["x"] + 2 and segment["y"] == my_head["y"]:
+            is_move_safe["right"] = False
+        elif segment["x"] == my_head["x"] + 3 and segment["y"] == my_head["y"]:
+            is_move_safe["right"] = False
+        if segment["x"] == my_head["x"] - 1 and segment["y"] == my_head["y"]:
             is_move_safe["left"] = False
-        elif next_move == "right" and my_head["x"] == segment["x"] - 1 and my_head["y"] == segment["y"]:
-            is_move_safe["right"] = False'''
-
-        
-
+        elif segment["x"] == my_head["x"] - 2 and segment["y"] == my_head["y"]:
+            is_move_safe["left"] = False
+        elif segment["x"] == my_head["x"] - 3 and segment["y"] == my_head["y"]:
+            is_move_safe["left"] = False
+        if segment["y"] == my_head["y"] + 1 and segment["x"] == my_head["x"]:
+            is_move_safe["up"] = False
+        elif segment["y"] == my_head["y"] + 2 and segment["x"] == my_head["x"]:
+            is_move_safe["up"] = False
+        elif segment["y"] == my_head["y"] + 3 and segment["x"] == my_head["x"]:
+            is_move_safe["up"] = False
+        if segment["y"] == my_head["y"] - 1 and segment["x"] == my_head["x"]:
+            is_move_safe["down"] = False
+        elif segment["y"] == my_head["y"] - 2 and segment["x"] == my_head["x"]:
+            is_move_safe["down"] = False
+        elif segment["y"] == my_head["y"] - 3 and segment["x"] == my_head["x"]:
+            is_move_safe["down"] = False
 
     # TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
-    # opponents = game_state['board']['snakes']
+    opponents = game_state['board']['snakes']
+
+    for opponent in opponents:
+        # Check for whether right move is safe_move is safe
+        for segment in opponent["body"]:
+            if segment["x"] == my_head["x"] + 1 and segment["y"] == my_head["y"]:
+                is_move_safe["right"] = False
+        # Check for whether left move is safe
+
+            if segment["x"] == my_head["x"] - 1 and segment["y"] == my_head["y"]:
+                is_move_safe["left"] = False
+        # Check for whether up move is safe
+
+            if segment["y"] == my_head["y"] + 1 and segment["x"] == my_head["x"]:
+                is_move_safe["up"] = False
+        # Check for whether down move is safe
+
+            if segment["y"] == my_head["y"] - 1 and segment["x"] == my_head["x"]:
+                is_move_safe["down"] = False
 
     # Are there any safe moves left?
     safe_moves = []
@@ -113,20 +134,20 @@ def move(game_state: typing.Dict) -> typing.Dict:
             safe_moves.append(move)
 
     if len(safe_moves) == 0:
-        print(f"MOVE {game_state['turn']}: No safe moves detected! Moving down")
+        print(f"MOVE {game_state['turn']
+                      }: No safe moves detected! Moving down")
+        print("head is at ", my_head["x"], " ", my_head["y"])
         return {"move": "down"}
 
     # Choose a random move from the safe ones
     next_move = random.choice(safe_moves)
 
     # TODO: Step 4 - Move towards food instead of random, to regain health and survive longer
-    # food = game_state['board']['food']
+    food = game_state['board']['food']
 
     print(f"MOVE {game_state['turn']}: {next_move}")
+    print(safe_moves)
     return {"move": next_move}
-
-  
-        
 
 
 # Start server when `python main.py` is run
