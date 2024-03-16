@@ -86,8 +86,7 @@ def move(game_state: typing.Dict) -> typing.Dict:
 
 
 def move_towards_food(game_state, my_head):
-    board = game_state['board']
-    food = board['food']
+    food = game_state['board']['food']
 
     closest_food = None
     min_distance = float('inf')
@@ -99,15 +98,20 @@ def move_towards_food(game_state, my_head):
             closest_food = food_item
 
     if closest_food:
-        # Move towards the closest food item
-        if closest_food['x'] > my_head['x']:
-            return "right"
-        elif closest_food['x'] < my_head['x']:
-            return "left"
-        elif closest_food['y'] > my_head['y']:
-            return "up"
-        elif closest_food['y'] < my_head['y']:
-            return "down"
+        # Prioritize moving in the direction of the nearest food item
+        x_diff = closest_food['x'] - my_head['x']
+        y_diff = closest_food['y'] - my_head['y']
+
+        if abs(x_diff) > abs(y_diff):
+            if x_diff > 0:
+                return "right"
+            else:
+                return "left"
+        else:
+            if y_diff > 0:
+                return "up"
+            else:
+                return "down"
     
     # Default to a random move if no food is found
     return random.choice(["up", "down", "left", "right"])
