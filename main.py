@@ -76,45 +76,54 @@ def move(game_state: typing.Dict) -> typing.Dict:
             elif segment['y'] == my_head['y'] + 1 and segment['x'] == my_head['x']:
                 is_move_safe["up"] = False
 
-    safe_moves = [move for move, safe in is_move_safe.items() if safe]
+    safe_moves = []
+    for move, isSafe in is_move_safe.items():
+        if isSafe:
+            safe_moves.append(move)
+
+    if len(safe_moves) == 0:
+        print(f"MOVE {game_state['turn']
+                      }: No safe moves detected! Moving down")
+        print("head is at ", my_head["x"], " ", my_head["y"])
+        return {"move": "down"}
 
     # Move towards food
-    next_move = move_towards_food(game_state, my_head)
-
+    next_move = random.choice(safe_moves)
+    food = game_state['board']['food']
     print(f"MOVE {game_state['turn']}: {next_move}")
     return {"move": next_move}
 
 
-def move_towards_food(game_state, my_head):
-    food = game_state['board']['food']
+# def move_towards_food(game_state, my_head):
+#     food = game_state['board']['food']
 
-    closest_food = None
-    min_distance = float('inf')
+#     closest_food = None
+#     min_distance = float('inf')
 
-    for food_item in food:
-        distance = abs(food_item['x'] - my_head['x']) + abs(food_item['y'] - my_head['y'])
-        if distance < min_distance:
-            min_distance = distance
-            closest_food = food_item
+#     for food_item in food:
+#         distance = abs(food_item['x'] - my_head['x']) + abs(food_item['y'] - my_head['y'])
+#         if distance < min_distance:
+#             min_distance = distance
+#             closest_food = food_item
 
-    if closest_food:
-        # Prioritize moving in the direction of the nearest food item
-        x_diff = closest_food['x'] - my_head['x']
-        y_diff = closest_food['y'] - my_head['y']
+#     if closest_food:
+#         # Prioritize moving in the direction of the nearest food item
+#         x_diff = closest_food['x'] - my_head['x']
+#         y_diff = closest_food['y'] - my_head['y']
 
-        if abs(x_diff) > abs(y_diff):
-            if x_diff > 0:
-                return "right"
-            else:
-                return "left"
-        else:
-            if y_diff > 0:
-                return "up"
-            else:
-                return "down"
+#         if abs(x_diff) > abs(y_diff):
+#             if x_diff > 0:
+#                 return "right"
+#             else:
+#                 return "left"
+#         else:
+#             if y_diff > 0:
+#                 return "up"
+#             else:
+#                 return "down"
     
     # Default to a random move if no food is found
-    return random.choice(["up", "down", "left", "right"])
+#   return random.choice(["up", "down", "left", "right"])
 
 
 if __name__ == "__main__":
