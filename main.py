@@ -44,11 +44,11 @@ def move(game_state: typing.Dict) -> typing.Dict:
     board_height = game_state['board']['height']
     if my_head['x'] == 0:
         is_move_safe["left"] = False
-    elif my_head['x'] == board_width - 1:
+    if my_head['x'] == board_width - 1:
         is_move_safe["right"] = False
     if my_head['y'] == 0:
         is_move_safe["down"] = False
-    elif my_head['y'] == board_height - 1:
+    if my_head['y'] == board_height - 1:
         is_move_safe["up"] = False
 
     # Prevent moving into self
@@ -91,6 +91,7 @@ def move(game_state: typing.Dict) -> typing.Dict:
     next_move = random.choice(safe_moves)
     food = game_state['board']['food']
     print(f"MOVE {game_state['turn']}: {next_move}")
+    print(safe_moves)
     return {"move": next_move}
 
 
