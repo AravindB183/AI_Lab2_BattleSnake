@@ -52,29 +52,29 @@ def move(game_state: typing.Dict) -> typing.Dict:
         is_move_safe["up"] = False
 
     # Prevent moving into self
-    my_body = game_state['you']['body']
-    for segment in my_body[1:]:
-        if segment['x'] == my_head['x'] - 1 and segment['y'] == my_head['y']:
-            is_move_safe["left"] = False
-        elif segment['x'] == my_head['x'] + 1 and segment['y'] == my_head['y']:
-            is_move_safe["right"] = False
-        elif segment['y'] == my_head['y'] - 1 and segment['x'] == my_head['x']:
-            is_move_safe["down"] = False
-        elif segment['y'] == my_head['y'] + 1 and segment['x'] == my_head['x']:
-            is_move_safe["up"] = False
+    # my_body = game_state['you']['body']
+    # for segment in my_body[1:]:
+    #     if segment['x'] == my_head['x'] - 1 and segment['y'] == my_head['y']:
+    #         is_move_safe["left"] = False
+    #     elif segment['x'] == my_head['x'] + 1 and segment['y'] == my_head['y']:
+    #         is_move_safe["right"] = False
+    #     elif segment['y'] == my_head['y'] - 1 and segment['x'] == my_head['x']:
+    #         is_move_safe["down"] = False
+    #     elif segment['y'] == my_head['y'] + 1 and segment['x'] == my_head['x']:
+    #         is_move_safe["up"] = False
 
-    # Prevent moving into other snakes
-    opponents = game_state['board']['snakes']
-    for snake in opponents:
-        for segment in snake['body']:
-            if segment['x'] == my_head['x'] - 1 and segment['y'] == my_head['y']:
-                is_move_safe["left"] = False
-            elif segment['x'] == my_head['x'] + 1 and segment['y'] == my_head['y']:
-                is_move_safe["right"] = False
-            elif segment['y'] == my_head['y'] - 1 and segment['x'] == my_head['x']:
-                is_move_safe["down"] = False
-            elif segment['y'] == my_head['y'] + 1 and segment['x'] == my_head['x']:
-                is_move_safe["up"] = False
+    # # Prevent moving into other snakes
+    # opponents = game_state['board']['snakes']
+    # for snake in opponents:
+    #     for segment in snake['body']:
+    #         if segment['x'] == my_head['x'] - 1 and segment['y'] == my_head['y']:
+    #             is_move_safe["left"] = False
+    #         elif segment['x'] == my_head['x'] + 1 and segment['y'] == my_head['y']:
+    #             is_move_safe["right"] = False
+    #         elif segment['y'] == my_head['y'] - 1 and segment['x'] == my_head['x']:
+    #             is_move_safe["down"] = False
+    #         elif segment['y'] == my_head['y'] + 1 and segment['x'] == my_head['x']:
+    #             is_move_safe["up"] = False
 
     safe_moves = []
     for move, isSafe in is_move_safe.items():
