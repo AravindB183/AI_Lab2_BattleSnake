@@ -127,19 +127,45 @@ def move_target(safe_moves, my_head, target):
 
    return next_move
 
-def flood_fill(board, start_x, start_y):
-   stack = [(start_x, start_y)]
-   safe_area = {(start_x, start_y)}
+def minimax(gameState, depth, maximizingPlayer):
+    if depth == 0 or is_terminal(gameState):
+        return evaluate(gameState), None
 
-   while stack:
-      x, y = stack.pop()
-      for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-         nx, ny = x + dx, y + dy
-         if 0 <= nx < board["width"] and 0 <= ny < board["height"] and (nx, ny) not in safe_area and not is_collision(board, nx, ny):
-            stack.append((nx, ny))
-            safe_area.add((nx, ny))
+    if maximizingPlayer:
+        value = float('-inf')
+        bestMove = None
+        for move_option in valid_moves(gameState):
+            newState = apply_move(gameState, move_option)
+            score, _ = minimax(newState, depth - 1, False)
+            if score > value:
+                value = score
+                bestMove = move_option
+        return (value, bestMove)
+    else:
+        value = float('inf')
+        bestMove = None
+        for move_option in valid_moves(gameState):
+            newState = apply_move(gameState, move_option)
+            score, _ = minimax(newState, depth - 1, True)
+            if score < value:
+                value = score
+                bestMove = move_option
+        return (value, bestMove)
 
-   return safe_area
+def flood_fill(board, start_x, start_y, gameState, depth, maximizingPlayer):
+    stack = [(start_x, start_y)]
+    safe_area = {(start_x, start_y)}
+
+    while stack:
+        x, y = stack.pop()
+        for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < board["width"] and 0 <= ny < board["height"] and (nx, ny) not in safe_area and not is_collision(board, nx, ny):
+                stack.append((nx, ny))
+                safe_area.add((nx, ny))
+                value, _ = minimax(gameState, depth, maximizingPlayer)
+    return safe_area
+
          
 def is_collision(board, x, y):
     # check if (x, y) collides with snake body
