@@ -67,36 +67,36 @@ def avoid_walls(board_width: Dict[str, int], board_height: List[dict], is_move_s
 
 
 
-#def move_towards_food(game_state, my_head):
-    food = game_state['board']['food']
+# def move_towards_food(game_state, my_head):
+#     food = game_state['board']['food']
 
-    closest_food = None
-    min_distance = float('inf')
+#     closest_food = None
+#     min_distance = float('inf')
 
-    for food_item in food:
-        distance = abs(food_item['x'] - my_head['x']) + abs(food_item['y'] - my_head['y'])
-        if distance < min_distance:
-            min_distance = distance
-            closest_food = food_item
+#     for food_item in food:
+#         distance = abs(food_item['x'] - my_head['x']) + abs(food_item['y'] - my_head['y'])
+#         if distance < min_distance:
+#             min_distance = distance
+#             closest_food = food_item
 
-    if closest_food:
-        # Prioritize moving in the direction of the nearest food item
-        x_diff = closest_food['x'] - my_head['x']
-        y_diff = closest_food['y'] - my_head['y']
+#     if closest_food:
+#         # Prioritize moving in the direction of the nearest food item
+#         x_diff = closest_food['x'] - my_head['x']
+#         y_diff = closest_food['y'] - my_head['y']
 
-        if abs(x_diff) > abs(y_diff):
-            if x_diff > 0:
-                return "right"
-            else:
-                return "left"
-        else:
-            if y_diff > 0:
-                return "up"
-            else:
-                return "down"
+#         if abs(x_diff) > abs(y_diff):
+#             if x_diff > 0:
+#                 return "right"
+#             else:
+#                 return "left"
+#         else:
+#             if y_diff > 0:
+#                 return "up"
+#             else:
+#                 return "down"
     
-    # Default to a random move if no food is found
-    return random.choice(["up", "down", "left", "right"])
+#     # Default to a random move if no food is found
+#     return random.choice(["up", "down", "left", "right"])
 
 # search for food
 def get_closest_target(targets, my_head):
