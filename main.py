@@ -1,109 +1,301 @@
+# Welcome to
+# __________         __    __  .__                               __
+# \______   \_____ _/  |__/  |_|  |   ____   ______ ____ _____  |  | __ ____
+#  |    |  _/\__  \\   __\   __\  | _/ __ \ /  ___//    \\__  \ |  |/ // __ \
+#  |    |   \ / __ \|  |  |  | |  |_\  ___/ \___ \|   |  \/ __ \|    <\  ___/
+#  |________/(______/__|  |__| |____/\_____>______>___|__(______/__|__\\_____>
+#
+# This file can be a nice home for your Battlesnake logic and helper functions.
+#
+# To get you started we've included code to prevent your Battlesnake from moving backwards.
+# For more info see docs.battlesnake.com
+
+import math
+import sys
 import random
 import typing
-import sys
+import numpy as np
+from collections import deque
+import copy
 
 
+# info is called when you create your Battlesnake on play.battlesnake.com
+# and controls your Battlesnake's appearance
+# TIP: If you open your Battlesnake URL in a browser you should see this data
 def info() -> typing.Dict:
+    print("INFO")
+
     return {
         "apiversion": "1",
-        "author": "YourUsername",
-        "color": "#888888",
-        "head": "default",
-        "tail": "default",
+        "author": "SlytherinSeeker",  # TODO: Your Battlesnake Username
+        "color": "#E80978",  # TODO: Choose color
+        "head": "default",  # TODO: Choose head
+        "tail": "default",  # TODO: Choose tail
     }
 
 
+# start is called when your Battlesnake begins a game
 def start(game_state: typing.Dict):
-    pass
+    print("GAME START")
 
 
+# end is called when your Battlesnake finishes a game
 def end(game_state: typing.Dict):
-    pass
+    print("GAME OVER\n")
 
+def distance_of_food(my_head,food):
+    return ( (my_head["x"]-food["x"])**2 + (my_head["y"]-food["y"])**2 )**0.5
 
-def move(game_state: typing.Dict) -> typing.Dict:
-    my_head = game_state["you"]["body"][0]
-    is_move_safe = {"up": True, "down": True, "left": True, "right": True}
+class Point:
+    def __init__(self):
+        self.x = 0
+        self.y = 0
 
-    # Prevent moving out of bounds
-    board_width = game_state['board']['width']
-    board_height = game_state['board']['height']
-    if my_head['x'] == 0:
-        is_move_safe["left"] = False
-    elif my_head['x'] == board_width - 1:
-        is_move_safe["right"] = False
-    if my_head['y'] == 0:
-        is_move_safe["down"] = False
-    elif my_head['y'] == board_height - 1:
-        is_move_safe["up"] = False
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
-    # Prevent moving into self
-    my_body = game_state['you']['body']
-    for segment in my_body[1:]:
-        if segment['x'] == my_head['x'] - 1 and segment['y'] == my_head['y']:
-            is_move_safe["left"] = False
-        elif segment['x'] == my_head['x'] + 1 and segment['y'] == my_head['y']:
-            is_move_safe["right"] = False
-        elif segment['y'] == my_head['y'] - 1 and segment['x'] == my_head['x']:
-            is_move_safe["down"] = False
-        elif segment['y'] == my_head['y'] + 1 and segment['x'] == my_head['x']:
-            is_move_safe["up"] = False
+    def __str__(self):
+        return f'({self.x}, {self.y})'
+        
+class Snake:
+    def __init__(self):
+        self.health = 0
+        self.pos = deque([])
 
-    # Prevent moving into other snakes
-    opponents = game_state['board']['snakes']
-    for snake in opponents:
-        for segment in snake['body']:
-            if segment['x'] == my_head['x'] - 1 and segment['y'] == my_head['y']:
-                is_move_safe["left"] = False
-            elif segment['x'] == my_head['x'] + 1 and segment['y'] == my_head['y']:
-                is_move_safe["right"] = False
-            elif segment['y'] == my_head['y'] - 1 and segment['x'] == my_head['x']:
-                is_move_safe["down"] = False
-            elif segment['y'] == my_head['y'] + 1 and segment['x'] == my_head['x']:
-                is_move_safe["up"] = False
+class Game:
+    def __init__(self):
+        self.width = 0
+        self.height = 0
+        self.snakes = [] # 0th snake is always us, rest are the opponent/s
+        self.snakes.append(Snake()) # us
+        self.foodList = []
 
-    safe_moves = [move for move, safe in is_move_safe.items() if safe]
+    def isValid(self, s, move):
+        valid = True
+        head = self.snakes[s].pos[0]
+        nextHead = Point(head.x+move[0], head.y+move[1])
 
-    # Move towards food
-    next_move = move_towards_food(game_state, my_head)
+        # Check for boundary collisions
+        if nextHead.x < 0 or nextHead.x >= self.width or nextHead.y < 0 or nextHead.y >= self.height:
+            valid = False
+        
+        if valid:
+            for snake in self.snakes:
+                for p in snake.pos:
+                    if nextHead.x == p.x and nextHead.y == p.y:
+                        valid = False
+                        break
 
-    print(f"MOVE {game_state['turn']}: {next_move}")
-    return {"move": next_move}
+        return valid
 
+    def moveOptions(self, s: int):
+        moveList = []
+        if self.isValid(s, (-1,0)):
+            moveList.append((-1,0))
+        if self.isValid(s, (1,0)):
+            moveList.append((1,0))
+        if self.isValid(s, (0,-1)):
+            moveList.append((0,-1))
+        if self.isValid(s, (0,1)):
+            moveList.append((0,1))
+        return moveList
+        
+    def moveSnake(self, s, move):
+        # Deep copy current game state
+        copyGame = copy.deepcopy(self)
 
-def move_towards_food(game_state, my_head):
-    board = game_state['board']
-    food = board['food']
+        # Get head position for player s
+        head = copyGame.snakes[s].pos[0]
 
-    closest_food = None
-    min_distance = float('inf')
+        # Generate next head position for player s
+        nextHead = Point(head.x+move[0], head.y+move[1])
+        
+        # Add the next head position to the player s position deque
+        copyGame.snakes[s].pos.appendleft(nextHead)
 
-    for food_item in food:
-        distance = abs(food_item['x'] - my_head['x']) + abs(food_item['y'] - my_head['y'])
-        if distance < min_distance:
-            min_distance = distance
-            closest_food = food_item
+        # Decrease player s health by 1
+        copyGame.snakes[s].health -= 1
 
-    if closest_food:
-        # Move towards the closest food item
-        if closest_food['x'] > my_head['x']:
-            return "right"
-        elif closest_food['x'] < my_head['x']:
-            return "left"
-        elif closest_food['y'] > my_head['y']:
-            return "up"
-        elif closest_food['y'] < my_head['y']:
-            return "down"
+        # Check if any food is consumed.
+        # Any non-consumed food is added to foodList
+        foodList = []
+        ateFood = False
+        for food in copyGame.foodList:
+            if food.x == nextHead.x and food.y == nextHead.y:
+                ateFood = True
+            else:
+                foodList.append(food)
+ 
+        if ateFood:
+            # If player s ate food, make the health 100 and don't remove the tail element
+            copyGame.snakes[s].health = 100
+        else:
+            # If plater s did not eat food, remove the tail element
+            copyGame.snakes[s].pos.pop()
+            
+        # Set the unconsumed food in the copyGame
+        copyGame.foodList = foodList
+
+        return copyGame
     
-    # Default to a random move if no food is found
-    return random.choice(["up", "down", "left", "right"])
+    def isDead(self, player, moveList):
+        return len(moveList) == 0 or self.snakes[player].health == 0
 
+    def checkDeadSnake(self, moveLists):
+        deadList = []
+        for i in range(len(self.snakes)):
+            deadList.append(False)
 
+        for i in range(len(self.snakes)):
+            for j in range(len(self.snakes)):
+                if i != j:
+                    isHeadCollision = self.snakes[i].pos[0].x == self.snakes[j].pos[0].x and self.snakes[i].pos[0].y == self.snakes[j].pos[0].y
+        
+                    if isHeadCollision:
+                        if len(self.snakes[i].pos) > len(self.snakes[j].pos):
+                            deadList[j] = True
+                        else:
+                            deadList[i] = True
+        
+        for i in range(len(self.snakes)):
+            deadList[i] = deadList[i] or len(moveLists[i]) == 0 or self.snakes[i].health == 0
+
+        return deadList
+    
+    def heuristic(self, player, deadList):
+        score = 0.0
+        if deadList[0]:
+            score = -math.inf
+        elif True in deadList[1:]:
+            score = math.inf
+        else:
+            #return float(self.snakes[player].health)
+            # Only when health or length is less than certain threshold, give priority to food. Otherwise avoid food.
+            needToLengthen = False
+            for s in self.snakes:
+                if s != self.snakes[player]:
+                    if len(self.snakes[player].pos) < len(s.pos):
+                        needToLengthen = True
+
+            health = self.snakes[player].health
+            length = float(len(self.snakes[player].pos))
+            if health < 50 or needToLengthen:
+                head = self.snakes[player].pos[0]
+                minInvDist = -math.inf
+                for food in self.foodList:
+                    dist = abs(food.x-head.x) + abs(food.y-head.y)
+                    invDist = 1.0 if dist == 0 else 1.0/float(dist)
+                    if minInvDist < invDist:
+                        minInvDist = invDist
+                    score = minInvDist + float(self.snakes[player].health)/100.0
+            else:
+                score = float(len(self.moveOptions(player)))
+            
+        return score
+        
+    def minmaxMove(self, depth):
+        if len(self.snakes) == 1:
+            moveList0 = self.moveOptions(0)
+            bestScore = -math.inf
+            bestMove = None
+            for move in moveList0:
+                newGame = self.moveSnake(0, move)
+                newGameMoveList0 = newGame.moveOptions(0)
+                newGameDeadList = newGame.checkDeadSnake([newGameMoveList0])
+                score = newGame.heuristic(0, newGameDeadList)
+                if bestScore < score:
+                    bestScore = score
+                    bestMove = move
+            return (bestScore, bestMove)
+        else:
+            moveList0 = self.moveOptions(0)
+            moveList1 = self.moveOptions(1)
+            deadList = self.checkDeadSnake([moveList0, moveList1])
+            return self.minmaxMoveRecursive(depth, 0, moveList0, moveList1, deadList)
+
+    def nextPlayer(self, player):
+        n = len(self.snakes)
+        return (player+1)%n
+
+    def minmaxMoveRecursive(self, depth, player, moveList0, moveList1, deadList):
+        if depth == 0 or deadList[0] or deadList[1]:
+            return (self.heuristic(player, deadList), None)
+        if player == 0:
+            bestScore = -math.inf
+            bestMove = None
+            for move in moveList0:
+                newGame = self.moveSnake(player, move)
+                newGameMoveList0 = newGame.moveOptions(0)
+                newGameMoveList1 = newGame.moveOptions(1)
+                newGameDeadList = newGame.checkDeadSnake([newGameMoveList0, newGameMoveList1])
+                (newGameScore, newGameMove) = newGame.minmaxMoveRecursive(depth-1, newGame.nextPlayer(player), newGameMoveList0, newGameMoveList1, newGameDeadList)
+                if bestScore < newGameScore:
+                    bestScore = newGameScore
+                    bestMove = move
+            return (bestScore, bestMove)
+        else:
+            bestScore = math.inf
+            bestMove = None
+            for move in moveList1:
+                newGame = self.moveSnake(player, move)
+                newGameMoveList0 = newGame.moveOptions(0)
+                newGameMoveList1 = newGame.moveOptions(1)
+                newGameDeadList = newGame.checkDeadSnake([newGameMoveList0, newGameMoveList1])
+                (newGameScore, newGameMove) = newGame.minmaxMoveRecursive(depth-1, newGame.nextPlayer(player), newGameMoveList0, newGameMoveList1, newGameDeadList)
+                if bestScore > newGameScore:
+                    bestScore = newGameScore
+                    bestMove = move
+            return (bestScore, bestMove)
+            
+            
+        
+# move is called on every turn and returns your next move
+# Valid moves are "up", "down", "left", or "right"
+# See https://docs.battlesnake.com/api/example-move for available data
+def move(game_state: typing.Dict) -> typing.Dict:
+    g = Game()
+    g.width = game_state['board']['width']
+    g.height = game_state['board']['height']
+    g.snakes[0].health = game_state["you"]["health"]
+    for s in game_state["you"]["body"]:
+        g.snakes[0].pos.append(Point(s["x"], s["y"]))
+
+    snakes = game_state['board']['snakes']
+    for snake in snakes:
+        if snake["id"] != game_state["you"]["id"]:
+            g.snakes.append(Snake())
+            g.snakes[1].health = snake["health"]
+            for s in snake["body"]:
+                g.snakes[1].pos.append(Point(s["x"], s["y"]))
+    
+    for food in game_state["board"]["food"]:
+        g.foodList.append(Point(food["x"], food["y"]))
+
+    # Depth of 4 seems optimal for the current heuristic
+    (score, move) = g.minmaxMove(4)
+    if move == None:
+        moveList = g.moveOptions(0)
+        move = random.choice(moveList)
+
+    print(move)
+    
+    if move == (-1,0):
+        return {"move":"left"}
+    elif move == (1,0):
+        return {"move":"right"}
+    elif move == (0,-1):
+        return {"move":"down"}
+    elif move == (0,1):
+        return {"move":"up"}
+    else:
+        return {"move":"up"}
+
+    
+
+  
+# Start server when `python main.py` is run
 if __name__ == "__main__":
     from server import run_server
-    port = "8000"
-    for i in range(len(sys.argv) - 1):
-        if sys.argv[i] == '--port':
-            port = sys.argv[i+1]
 
-    run_server({"info": info, "start": start, "move": move, "end": end, "port": port})
+    run_server({"info": info, "start": start, "move": move, "end": end})
