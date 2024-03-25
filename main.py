@@ -44,9 +44,11 @@ def end(game_state: typing.Dict):
     print("GAME OVER\n")
 
 def distance_of_food(my_head,food):
+    # Euclidean distance from food
     return ( (my_head["x"]-food["x"])**2 + (my_head["y"]-food["y"])**2 )**0.5
 
 class Point:
+    # Object Point has attribute x and y 
     def __init__(self):
         self.x = 0
         self.y = 0
@@ -59,11 +61,13 @@ class Point:
         return f'({self.x}, {self.y})'
         
 class Snake:
+    # Object Snake has attribute health and pos
     def __init__(self):
         self.health = 0
-        self.pos = deque([])
+        self.pos = deque([]) # deque object is easier to handle for to append and pop with O(1)
 
 class Game:
+    # Object Game has the attributes of the gameboard which are required just for simulation in minmax algorithm
     def __init__(self):
         self.width = 0
         self.height = 0
@@ -72,6 +76,7 @@ class Game:
         self.foodList = []
 
     def isValid(self, s, move):
+        # isValid() Checks whether the move is valid. Returns true or false
         valid = True
         head = self.snakes[s].pos[0]
         nextHead = Point(head.x+move[0], head.y+move[1])
@@ -80,6 +85,7 @@ class Game:
         if nextHead.x < 0 or nextHead.x >= self.width or nextHead.y < 0 or nextHead.y >= self.height:
             valid = False
         
+        # Check for body collisions with itslef and other snakes
         if valid:
             for snake in self.snakes:
                 for p in snake.pos:
@@ -90,14 +96,19 @@ class Game:
         return valid
 
     def moveOptions(self, s: int):
+        # moveOptions chechks which move is valid and returns a list of valid moves.
         moveList = []
         if self.isValid(s, (-1,0)):
+            # left move is valid
             moveList.append((-1,0))
         if self.isValid(s, (1,0)):
+            # right move is valid
             moveList.append((1,0))
         if self.isValid(s, (0,-1)):
+            # down move is valid
             moveList.append((0,-1))
         if self.isValid(s, (0,1)):
+            # up move is valid
             moveList.append((0,1))
         return moveList
         
@@ -139,14 +150,15 @@ class Game:
 
         return copyGame
     
-    def isDead(self, player, moveList):
-        return len(moveList) == 0 or self.snakes[player].health == 0
 
     def checkDeadSnake(self, moveLists):
+        # Checks if any move makes the snake dead. Returns a list of booleans as a status of snake's living or death.
+        # Snake is dead when it collides with other snake or boundary or when it has no valid move left.
         deadList = []
         for i in range(len(self.snakes)):
             deadList.append(False)
 
+        # Check whether the snake is colliding
         for i in range(len(self.snakes)):
             for j in range(len(self.snakes)):
                 if i != j:
@@ -158,6 +170,7 @@ class Game:
                         else:
                             deadList[i] = True
         
+        # Check whether any valid moves are left
         for i in range(len(self.snakes)):
             deadList[i] = deadList[i] or len(moveLists[i]) == 0 or self.snakes[i].health == 0
 
@@ -170,9 +183,11 @@ class Game:
         elif True in deadList[1:]:
             score = math.inf
         else:
-            #return float(self.snakes[player].health)
-            # Only when health or length is less than certain threshold, give priority to food. Otherwise avoid food.
+            # Only when health or length is less than certain threshold, give more weightage to food.
+            # This strategy is implemented to make sure that the snake does not get too long.
             needToLengthen = False
+
+            # Check if the snakes length is less that the opponent snake's length
             for s in self.snakes:
                 if s != self.snakes[player]:
                     if len(self.snakes[player].pos) < len(s.pos):
