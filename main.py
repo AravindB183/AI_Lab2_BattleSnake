@@ -205,11 +205,13 @@ class Game:
                         minInvDist = invDist
                     score = minInvDist + float(self.snakes[player].health)/100.0
             else:
+                # Give weightage to the move which has more valid moves available.
                 score = float(len(self.moveOptions(player)))
             
         return score
         
     def minmaxMove(self, depth):
+        # When there is only one snake on the board
         if len(self.snakes) == 1:
             moveList0 = self.moveOptions(0)
             bestScore = -math.inf
@@ -223,6 +225,7 @@ class Game:
                     bestScore = score
                     bestMove = move
             return (bestScore, bestMove)
+        # For when there are 2 snakes on the board
         else:
             moveList0 = self.moveOptions(0)
             moveList1 = self.moveOptions(1)
@@ -230,37 +233,46 @@ class Game:
             return self.minmaxMoveRecursive(depth, 0, moveList0, moveList1, deadList)
 
     def nextPlayer(self, player):
+        # Change the player for the turn
         n = len(self.snakes)
         return (player+1)%n
 
     def minmaxMoveRecursive(self, depth, player, moveList0, moveList1, deadList):
+        # Check if condition is terminal
         if depth == 0 or deadList[0] or deadList[1]:
             return (self.heuristic(player, deadList), None)
+        # Maximizing player turn
         if player == 0:
             bestScore = -math.inf
             bestMove = None
             for move in moveList0:
+                # moveSnake() returns the simulated game board
                 newGame = self.moveSnake(player, move)
                 newGameMoveList0 = newGame.moveOptions(0)
                 newGameMoveList1 = newGame.moveOptions(1)
                 newGameDeadList = newGame.checkDeadSnake([newGameMoveList0, newGameMoveList1])
                 (newGameScore, newGameMove) = newGame.minmaxMoveRecursive(depth-1, newGame.nextPlayer(player), newGameMoveList0, newGameMoveList1, newGameDeadList)
+                # Find out which move has the highest score
                 if bestScore < newGameScore:
                     bestScore = newGameScore
                     bestMove = move
+            # Return the best move and score for that turn
             return (bestScore, bestMove)
         else:
             bestScore = math.inf
             bestMove = None
+            # Minimizing player turn
             for move in moveList1:
                 newGame = self.moveSnake(player, move)
                 newGameMoveList0 = newGame.moveOptions(0)
                 newGameMoveList1 = newGame.moveOptions(1)
                 newGameDeadList = newGame.checkDeadSnake([newGameMoveList0, newGameMoveList1])
                 (newGameScore, newGameMove) = newGame.minmaxMoveRecursive(depth-1, newGame.nextPlayer(player), newGameMoveList0, newGameMoveList1, newGameDeadList)
+                # Find out which move has lowest score
                 if bestScore > newGameScore:
                     bestScore = newGameScore
                     bestMove = move
+            # Return the best move and score for the turn
             return (bestScore, bestMove)
             
             
@@ -269,32 +281,39 @@ class Game:
 # Valid moves are "up", "down", "left", or "right"
 # See https://docs.battlesnake.com/api/example-move for available data
 def move(game_state: typing.Dict) -> typing.Dict:
+    # Create Game Object
     g = Game()
     g.width = game_state['board']['width']
     g.height = game_state['board']['height']
     g.snakes[0].health = game_state["you"]["health"]
+
+    # Locate the Snake Object
     for s in game_state["you"]["body"]:
         g.snakes[0].pos.append(Point(s["x"], s["y"]))
 
     snakes = game_state['board']['snakes']
     for snake in snakes:
+        # Make sure that the id of our snake in the game is at 0th position and rest other snakes are after that.
         if snake["id"] != game_state["you"]["id"]:
             g.snakes.append(Snake())
             g.snakes[1].health = snake["health"]
             for s in snake["body"]:
                 g.snakes[1].pos.append(Point(s["x"], s["y"]))
-    
+
+    # Create the foodlist
     for food in game_state["board"]["food"]:
         g.foodList.append(Point(food["x"], food["y"]))
 
     # Depth of 4 seems optimal for the current heuristic
     (score, move) = g.minmaxMove(4)
+    
+    # If minmax fails , choose a move randomly
     if move == None:
         moveList = g.moveOptions(0)
         move = random.choice(moveList)
 
-    print(move)
     
+    # Return the chosen move to the game
     if move == (-1,0):
         return {"move":"left"}
     elif move == (1,0):
